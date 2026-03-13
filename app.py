@@ -17,25 +17,36 @@ HEADERS = {
 def index():
     return render_template("index.html", project_name="NexaChat AI")
 
+# Free models to try in order (fallback chain)
+FREE_MODELS = [
+    "mistralai/mistral-small-3.1-24b-instruct:free",
+    "qwen/qwen3-4b:free",
+    "google/gemma-3-4b-it:free",
+]
+
 @app.route("/api/ask", methods=["POST"])
 def ask():
     user_input = request.json.get("prompt", "")
-    payload = {
-        "model": "mistralai/mistral-small-3.1-24b-instruct:free",
-        "messages": [{"role": "user", "content": user_input}]
-    }
 
-    try:
-        response = requests.post(API_URL, headers=HEADERS, json=payload)
-        result = response.json()
+    for model in FREE_MODELS:
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": user_input}]
+        }
 
-        if "error" in result:
-            return jsonify({"response": f"API error: {result['error'].get('message', 'Unknown error')}"})
+        try:
+            response = requests.post(API_URL, headers=HEADERS, json=payload, timeout=30)
+            result = response.json()
 
-        reply = result["choices"][0]["message"]["content"]
-        return jsonify({"response": reply})
-    except Exception as e:
-        return jsonify({"response": f"Server error: {str(e)}"})
+            if "error" in result:
+                continue  # Try next model
+
+            reply = result["choices"][0]["message"]["content"]
+            return jsonify({"response": reply})
+        except Exception:
+            continue  # Try next model
+
+    return jsonify({"response": "All AI models are temporarily unavailable. Please try again in a moment."})
 
 if __name__ == "__main__":
     app.run(debug=True)
