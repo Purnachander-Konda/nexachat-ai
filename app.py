@@ -21,7 +21,7 @@ def index():
 def ask():
     user_input = request.json.get("prompt", "")
     payload = {
-        "model": "mistralai/mistral-7b-instruct:free",
+        "model": "mistralai/mistral-small-3.1-24b-instruct:free",
         "messages": [{"role": "user", "content": user_input}]
     }
 
