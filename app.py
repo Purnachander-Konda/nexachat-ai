@@ -21,13 +21,17 @@ def index():
 def ask():
     user_input = request.json.get("prompt", "")
     payload = {
-        "model": "mistralai/mistral-7b-instruct",
+        "model": "mistralai/mistral-7b-instruct:free",
         "messages": [{"role": "user", "content": user_input}]
     }
 
     try:
         response = requests.post(API_URL, headers=HEADERS, json=payload)
         result = response.json()
+
+        if "error" in result:
+            return jsonify({"response": f"API error: {result['error'].get('message', 'Unknown error')}"})
+
         reply = result["choices"][0]["message"]["content"]
         return jsonify({"response": reply})
     except Exception as e:
